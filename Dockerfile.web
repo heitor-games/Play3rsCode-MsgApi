@@ -1,0 +1,24 @@
+FROM node:20-slim
+
+WORKDIR /app
+
+# Copy root config
+COPY package.json package-lock.json tsconfig.base.json ./
+
+# Copy package manifest
+COPY apps/web/package.json apps/web/
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY apps/web/ apps/web/
+
+# Build
+RUN cd apps/web && npm run build
+
+WORKDIR /app/apps/web
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
