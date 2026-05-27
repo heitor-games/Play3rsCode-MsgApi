@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  SYSTEM
+}
+
+enum ChannelRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum PlanTier {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+}
+
+enum UsageMetric {
+  MESSAGES
+  CHANNELS
+  CONNECTIONS
+  NOTIFICATIONS
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  avatarUrl    String?
+  isOnline     Boolean  @default(false)
+  lastSeen     DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sentMessages     Message[]       @relation("SentMessages")
+  receivedMessages Message[]       @relation("ReceivedMessages")
+  ownedChannels    Channel[]       @relation("ChannelOwner")
+  channelMembers   ChannelMember[]
+  subscription     Subscription?
+  apiKeys          ApiKey[]
+  usageRecords     UsageRecord[]
+
+  @@map("users")
+}
+
+model Message {
+  id          String      @id @default(uuid())
+  content     String
+  senderId    String
+  channelId   String?
+  recipientId String?
+  type        MessageType @default(TEXT)
+  createdAt   DateTime    @default(now())
+  readAt      DateTime?
+
+  sender    User  @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User? @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  channel   Channel? @relation("ChannelMessages", fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@index([channelId, createdAt])
+  @@index([senderId, recipientId, createdAt])
+  @@map("messages")
+}
+
+model Channel {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isPublic    Boolean  @default(true)
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner   User            @relation("ChannelOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members ChannelMember[]
+  messages Message[]      @relation("ChannelMessages")
+
+  @@map("channels")
+}
+
+model ChannelMember {
+  id        String      @id @default(uuid())
+  channelId String
+  userId    String
+  role      ChannelRole @default(MEMBER)
+  joinedAt  DateTime    @default(now())
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@map("channel_members")
+}
+
+model Subscription {
+  id                    String             @id @default(uuid())
+  userId                String             @unique
+  stripeCustomerId      String
+  stripeSubscriptionId  String?
+  plan                  PlanTier           @default(FREE)
+  status                SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart    DateTime           @default(now())
+  currentPeriodEnd      DateTime           @default(now())
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model ApiKey {
+  id         String    @id @default(uuid())
+  userId     String
+  key        String    @unique
+  name       String
+  isActive   Boolean   @default(true)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([key])
+  @@map("api_keys")
+}
+
+model UsageRecord {
+  id          String      @id @default(uuid())
+  userId      String
+  metric      UsageMetric
+  quantity    Int         @default(0)
+  periodStart DateTime
+  periodEnd   DateTime
+  createdAt   DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, metric, periodStart])
+  @@map("usage_records")
+}

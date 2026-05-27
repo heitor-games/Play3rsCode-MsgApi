@@ -1,0 +1,33 @@
+export default function Header() {
+  return (
+    <header className="border-b border-gray-200 dark:border-gray-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">RT</span>
+          </div>
+          <span className="text-xl font-bold text-gray-900 dark:text-white">
+            RealTime Chat
+          </span>
+        </div>
+        <nav className="hidden md:flex items-center gap-8">
+          <a href="#features" className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition">
+            Features
+          </a>
+          <a href="#pricing" className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition">
+            Pricing
+          </a>
+          <a href="#docs" className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition">
+            Docs
+          </a>
+          <a
+            href="/login"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            Get Started
+          </a>
+        </nav>
+      </div>
+    </header>
+  );
+}
