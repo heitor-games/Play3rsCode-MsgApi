@@ -1,6 +1,6 @@
 FROM node:20-slim
 
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -y && apt-get install -y openssl curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -27,8 +27,12 @@ RUN cd packages/server && npx prisma generate
 # Build server
 RUN cd packages/server && npx tsc
 
+# Copy startup script
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 WORKDIR /app/packages/server
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+CMD ["/app/start.sh"]

@@ -18,9 +18,12 @@ export type Env = z.infer<typeof envSchema>;
 export function loadEnv(): Env {
   const result = envSchema.safeParse(process.env);
   if (!result.success) {
-    console.error('Invalid environment variables:');
-    console.error(result.error.format());
+    console.error('=== ENV VALIDATION FAILED ===');
+    const errors = result.error.issues.map(i => `  ${i.path.join('.')}: ${i.message}`);
+    console.error(errors.join('\n'));
+    console.error('=============================');
     process.exit(1);
   }
+  console.log(`[env] PORT=${result.data.PORT}, NODE_ENV=${result.data.NODE_ENV}`);
   return result.data;
 }
