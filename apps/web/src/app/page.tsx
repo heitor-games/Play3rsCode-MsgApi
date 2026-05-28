@@ -214,7 +214,7 @@ export default function Home() {
               Criar Conta Grátis
             </a>
             <a
-              href="#docs"
+              href="/docs"
               className="px-8 py-3 border border-blue-400 text-white rounded-lg font-medium hover:bg-blue-700 transition"
             >
               Ver Documentação
