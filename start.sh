@@ -2,25 +2,20 @@
 set -e
 
 echo "=== Server Startup ==="
-echo "Waiting for database..."
 
-# Wait for database to be ready (max 30 attempts)
+# Try migrate with retries (database might not be ready yet)
 ATTEMPTS=0
-MAX_ATTEMPTS=30
-until npx prisma migrate status > /dev/null 2>&1 || [ $ATTEMPTS -eq $MAX_ATTEMPTS ]; do
-  echo "Database not ready, waiting... (attempt $((ATTEMPTS+1))/$MAX_ATTEMPTS)"
-  sleep 2
+MAX_ATTEMPTS=20
+
+until npx prisma migrate deploy 2>&1; do
   ATTEMPTS=$((ATTEMPTS+1))
+  if [ $ATTEMPTS -eq $MAX_ATTEMPTS ]; then
+    echo "ERROR: Migration failed after $MAX_ATTEMPTS attempts"
+    exit 1
+  fi
+  echo "Migration attempt $ATTEMPTS failed, retrying in 5s..."
+  sleep 5
 done
-
-if [ $ATTEMPTS -eq $MAX_ATTEMPTS ]; then
-  echo "ERROR: Database not ready after $MAX_ATTEMPTS attempts"
-  exit 1
-fi
-
-echo "Database ready!"
-echo "Running Prisma migrations..."
-npx prisma migrate deploy
 
 echo "Migrations done!"
 echo "Starting server..."
