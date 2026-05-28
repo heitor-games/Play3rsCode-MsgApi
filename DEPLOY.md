@@ -66,8 +66,16 @@ FRONTEND_URL=https://seu-web.up.railway.app
 2. Renomear o serviço para `web`
 3. **Settings**:
    - **Dockerfile Path**: `Dockerfile.web`
-4. **Settings → Networking → Generate Domain**
-5. Anote a URL: `https://web-xxx.up.railway.app`
+4. **Variables** → adicione:
+
+```env
+NEXT_PUBLIC_API_URL=https://server-xxx.up.railway.app
+```
+
+**IMPORTANTE:** essa variável é injetada no build do Next.js. Se mudar a URL do server, precisa fazer **Redeploy** do web.
+
+5. **Settings → Networking → Generate Domain**
+6. Anote a URL: `https://web-xxx.up.railway.app`
 
 ---
 
