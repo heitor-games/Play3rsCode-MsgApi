@@ -2,11 +2,29 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import { prisma } from '../config/database';
-import { signToken } from './jwt';
+import { signToken, verifyToken } from './jwt';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
 const router = Router();
+
+// Auth middleware for Express routes
+function requireAuth(req: Request, res: Response, next: Function) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+  if (!token) {
+    return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Token required' });
+  }
+
+  try {
+    const payload = verifyToken(token);
+    (req as any).user = payload;
+    next();
+  } catch {
+    return res.status(401).json({ error: 'INVALID_TOKEN', message: 'Invalid or expired token' });
+  }
+}
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -123,6 +141,41 @@ router.post('/login', async (req: Request, res: Response) => {
       logger.error({ err }, 'Login error');
       res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Internal server error' });
     }
+  }
+});
+
+// Get current user info
+router.get('/me', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.userId;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        avatarUrl: true,
+        isOnline: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'NOT_FOUND', message: 'User not found' });
+    }
+
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId },
+    });
+
+    res.json({
+      user,
+      subscription: subscription || { plan: 'FREE', status: 'ACTIVE' },
+    });
+  } catch (err) {
+    logger.error({ err }, 'Error fetching user');
+    res.status(500).json({ error: 'INTERNAL', message: 'Internal server error' });
   }
 });
 
