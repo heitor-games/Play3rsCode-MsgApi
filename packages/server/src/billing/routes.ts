@@ -103,6 +103,7 @@ router.post('/checkout', requireAuth, async (req: Request, res: Response) => {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
+      payment_method_types: ['card'],
       line_items: [{ price: plan.priceId, quantity: 1 }],
       success_url: `${process.env.FRONTEND_URL || 'http://localhost:3001'}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3001'}/pricing`,
